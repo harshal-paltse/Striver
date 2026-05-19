@@ -1,0 +1,81 @@
+class Solution {
+    class Segment_tree {
+    int n;
+    int[] tree;
+
+    public Segment_tree(int size) {
+        this.n = size;
+        tree = new int[4 * n]; 
+    }
+
+    void update(int index, int value, int node, int left, int right) {
+        if (left == right) {
+            tree[node] = tree[node] + 1;
+            return;
+        }
+        int mid = (left + right) / 2;
+        if (index <= mid) {
+            update(index, value, 2 * node, left, mid);
+        } else {
+            update(index, value, 2 * node + 1, mid + 1, right);
+        }
+        tree[node] = tree[2 * node] + tree[2 * node + 1]; 
+    }
+
+    int query(int qleft, int qright, int node, int left, int right) {
+        if (qleft > right || qright < left) return 0; 
+
+        if (qleft <= left && qright >= right) {
+            return tree[node]; 
+        }
+        int mid = (left + right)/2;
+        int left_count = query(qleft, qright, 2 * node, left, mid);
+        int right_count = query(qleft, qright, 2 * node + 1, mid + 1, right);
+        return left_count + right_count; 
+    }
+    }
+
+    public int[] resultArray(int[] nums) {
+        TreeSet<Integer> set = new TreeSet<>();
+        for(int i = 0; i < nums.length; i++) set.add(nums[i]);
+
+        int n = nums.length, idx = 1, max = set.size();
+        HashMap<Integer, Integer> map = new HashMap<>();
+
+        for(Integer num : set) map.put(num, idx++);
+        
+        int[] arr1 = new int[n], arr2 = new int[n];
+
+        Segment_tree tree01 = new Segment_tree(max), tree02 = new Segment_tree(max);
+
+        arr1[0] = nums[0];
+        tree01.update(map.get(nums[0]), 1, 1, 1, max);
+        arr2[0] = nums[1];
+        tree02.update(map.get(nums[1]), 1, 1, 1, max);
+        
+        int idx1 = 0, idx2 = 0;
+        
+        for(int i = 2; i < nums.length; i++){
+            int count01 = tree01.query(map.get(nums[i]) + 1, max, 1, 1, max);
+            int count02 = tree02.query(map.get(nums[i]) + 1, max, 1, 1, max);
+
+            boolean arr01added = count01 == count02 && (idx1 == idx2 || idx1 < idx2);
+            arr01added = arr01added || (count01 > count02);
+
+            if(arr01added){
+                arr1[++idx1] = nums[i];
+                tree01.update(map.get(nums[i]), 1, 1, 1, max);
+            }else{
+                arr2[++idx2] = nums[i];
+                tree02.update(map.get(nums[i]), 1, 1, 1, max);
+            }
+
+        }
+     
+        int[] ans = new int[n];
+        for(int i = idx1; i >= 0; i--) ans[i] = arr1[i];
+        for(int i = nums.length - 1; i >= idx1 + 1; i--) ans[i] = arr2[i - (idx1 + 1)];
+
+        return ans;
+    }
+}
